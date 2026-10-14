@@ -1,12 +1,32 @@
 import os
+import threading
+import http.server
+import socketserver
 import requests
 from telethon import TelegramClient, events
 
+# Настройка веб-сервера для Render (чтобы проходил тест портов)
+PORT = int(os.environ.get("PORT", 10000))
+
+class SimpleHandler(http.server.SimpleHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot is active and running!")
+
+def run_web_server():
+    with socketserver.TCPServer(("", PORT), SimpleHandler) as httpd:
+        print(f"Web server started on port {PORT}")
+        httpd.serve_forever()
+
+# Запускаем веб-сервер в фоновом потоке
+threading.Thread(target=run_web_server, daemon=True).start()
+
+# Основной парсер Telegram
 API_ID = int(os.environ.get("API_ID", 0))
 API_HASH = os.environ.get("API_HASH", "")
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL", "")
 
-# Твои 10 каналов
 TARGET_CHANNELS = [
     "ggreat_of_development",
     "CREconsultant",
