@@ -5,7 +5,6 @@ import socketserver
 import requests
 from telethon import TelegramClient, events
 
-# Создаем папку для временного сохранения медиа
 os.makedirs("downloads", exist_ok=True)
 
 PORT = int(os.environ.get("PORT", 10000))
@@ -46,7 +45,7 @@ async def handler(event):
     message = event.message
 
     media_type = None
-    file_path = ""
+    file_path = None
 
     if message.photo:
         media_type = "photo"
@@ -58,25 +57,24 @@ async def handler(event):
         media_type = "document"
         file_path = await message.download_media(file="downloads/")
 
-    # Если файл скачался, формируем полный путь или имя
-    abs_file_path = os.path.abspath(file_path) if file_path else ""
-
     payload = {
-        "chat_id": event.chat_id,
+        "chat_id": str(event.chat_id),
         "chat_title": event.chat.title if event.chat else "",
-        "message_id": message.id,
+        "message_id": str(message.id),
         "text": message.text or message.raw_text or "",
         "date": str(message.date),
-        "media_type": media_type,
-        "file_path": abs_file_path,
-        "image_url": abs_file_path if media_type == "photo" else "",
-        "video_url": abs_file_path if media_type == "video" else "",
-        "document_url": abs_file_path if media_type == "document" else "",
+        "media_type": media_type or "",
     }
 
     try:
-        requests.post(WEBHOOK_URL, json=payload)
-        print(f"Пост из {payload['chat_title']} с медиа успешно отправлен.")
+        if file_path and os.path.exists(file_path):
+            with open(file_path, "rb") as f:
+                files = {"file": f}
+                requests.post(WEBHOOK_URL, data=payload, files=files)
+            os.remove(file_path)  # Удаляем временный файл
+        else:
+            requests.post(WEBHOOK_URL, json=payload)
+        print(f"Пост из {payload['chat_title']} успешно отправлен.")
     except Exception as e:
         print(f"Ошибка отправки: {e}")
 
