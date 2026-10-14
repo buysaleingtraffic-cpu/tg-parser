@@ -7,11 +7,16 @@ API_HASH = os.environ.get("API_HASH", "")
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL", "")
 
 TARGET_CHANNELS = [
-    "channel_username_1",
-    "channel_username_2",
-    "channel_username_3",
-    "channel_username_4",
-    "channel_username_5",
+    "ggreat_of_development",
+    "CREconsultant",
+    "belaya_kaska",
+    "Jelezobetonniyzames",
+    "dvizhenieru",
+    "cool_construction",
+    "domostroy_channel",
+    "propertyinsider",
+    "stroi_mos_ru",
+    "developers_policy",
 ]
 
 client = TelegramClient("morzen_parser_session", API_ID, API_HASH)
