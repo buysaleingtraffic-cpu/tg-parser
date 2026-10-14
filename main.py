@@ -47,12 +47,20 @@ async def handler(event):
     message = event.message
 
     media_type = None
+    image_url = ""
+    video_url = ""
+    document_url = ""
+
     if message.photo:
         media_type = "photo"
+        # Получаем публичную/веб-ссылку или уникальный file_id для скачивания/отправки
+        image_url = f"https://t.me/{event.chat.username}/{message.id}" if event.chat and event.chat.username else ""
     elif message.video:
         media_type = "video"
+        video_url = f"https://t.me/{event.chat.username}/{message.id}" if event.chat and event.chat.username else ""
     elif message.document:
         media_type = "document"
+        document_url = f"https://t.me/{event.chat.username}/{message.id}" if event.chat and event.chat.username else ""
 
     payload = {
         "chat_id": event.chat_id,
@@ -61,6 +69,9 @@ async def handler(event):
         "text": message.text or message.raw_text or "",
         "date": str(message.date),
         "media_type": media_type,
+        "image_url": image_url,
+        "video_url": video_url,
+        "document_url": document_url,
     }
 
     try:
