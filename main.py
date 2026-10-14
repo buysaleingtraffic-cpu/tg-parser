@@ -5,7 +5,9 @@ import socketserver
 import requests
 from telethon import TelegramClient, events
 
-# Настройка веб-сервера для Render (чтобы проходил тест портов)
+# Создаем папку для временного сохранения медиа
+os.makedirs("downloads", exist_ok=True)
+
 PORT = int(os.environ.get("PORT", 10000))
 
 class SimpleHandler(http.server.SimpleHTTPRequestHandler):
@@ -16,13 +18,10 @@ class SimpleHandler(http.server.SimpleHTTPRequestHandler):
 
 def run_web_server():
     with socketserver.TCPServer(("", PORT), SimpleHandler) as httpd:
-        print(f"Web server started on port {PORT}")
         httpd.serve_forever()
 
-# Запускаем веб-сервер в фоновом потоке
 threading.Thread(target=run_web_server, daemon=True).start()
 
-# Основной парсер Telegram
 API_ID = int(os.environ.get("API_ID", 0))
 API_HASH = os.environ.get("API_HASH", "")
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL", "")
@@ -47,20 +46,20 @@ async def handler(event):
     message = event.message
 
     media_type = None
-    image_url = ""
-    video_url = ""
-    document_url = ""
+    file_path = ""
 
     if message.photo:
         media_type = "photo"
-        # Получаем публичную/веб-ссылку или уникальный file_id для скачивания/отправки
-        image_url = f"https://t.me/{event.chat.username}/{message.id}" if event.chat and event.chat.username else ""
+        file_path = await message.download_media(file="downloads/")
     elif message.video:
         media_type = "video"
-        video_url = f"https://t.me/{event.chat.username}/{message.id}" if event.chat and event.chat.username else ""
+        file_path = await message.download_media(file="downloads/")
     elif message.document:
         media_type = "document"
-        document_url = f"https://t.me/{event.chat.username}/{message.id}" if event.chat and event.chat.username else ""
+        file_path = await message.download_media(file="downloads/")
+
+    # Если файл скачался, формируем полный путь или имя
+    abs_file_path = os.path.abspath(file_path) if file_path else ""
 
     payload = {
         "chat_id": event.chat_id,
@@ -69,14 +68,15 @@ async def handler(event):
         "text": message.text or message.raw_text or "",
         "date": str(message.date),
         "media_type": media_type,
-        "image_url": image_url,
-        "video_url": video_url,
-        "document_url": document_url,
+        "file_path": abs_file_path,
+        "image_url": abs_file_path if media_type == "photo" else "",
+        "video_url": abs_file_path if media_type == "video" else "",
+        "document_url": abs_file_path if media_type == "document" else "",
     }
 
     try:
         requests.post(WEBHOOK_URL, json=payload)
-        print(f"Пост из {payload['chat_title']} успешно отправлен.")
+        print(f"Пост из {payload['chat_title']} с медиа успешно отправлен.")
     except Exception as e:
         print(f"Ошибка отправки: {e}")
 
