@@ -7,9 +7,6 @@ import requests
 from collections import defaultdict
 from telethon import TelegramClient, events, types
 
-# Папка downloads больше не нужна для альбомов, но оставим для одиночных файлов
-os.makedirs("downloads", exist_ok=True)
-
 PORT = int(os.environ.get("PORT", 10000))
 
 class SimpleHandler(http.server.SimpleHTTPRequestHandler):
@@ -56,13 +53,11 @@ async def handler(event):
     if message.grouped_id:
         group_id = str(message.grouped_id)
 
-        # Получаем file_id и тип медиа без скачивания
         file_id = None
         media_type = None
         
         if message.photo:
             media_type = "photo"
-            # Достаем file_id самой большой версии фото
             file_id = pack_bot_file_id(message.photo)
         elif message.video:
             media_type = "video"
@@ -71,28 +66,26 @@ async def handler(event):
         if file_id:
             album_buffers[group_id].append({
                 "file_id": file_id,
-                "media_type": media_type,
+                "media_type": media_type, # Сохраняем тип каждого конкретного файла (photo/video)
                 "text": message.text or message.raw_text or ""
             })
 
-        # Перезапускаем таймер ожидания альбома
         if group_id in album_timers:
             album_timers[group_id].cancel()
 
         async def send_album_later(g_id, c_id, c_title, m_date, m_id):
-            await asyncio.sleep(3.0)  # Ждем чуть дольше, чтобы все файлы собрались
+            await asyncio.sleep(3.0)  # Ждем сбора всех файлов альбома
             items = album_buffers.pop(g_id, [])
             if not items:
                 return
 
-            # Ищем подпись к альбому среди всех сообщений группы
             combined_text = next((i["text"] for i in items if i["text"].strip()), "")
             
-            # Собираем список всех file_id для альбома
-            file_ids = [i["file_id"] for i in items if i["file_id"]]
+            # Собираем массив объектов с id и реальным типом медиа для каждого файла
+            file_items = [{"file_id": i["file_id"], "media_type": i["media_type"]} for i in items if i["file_id"]]
             
-            if not file_ids:
-                return # Нет медиафайлов
+            if not file_items:
+                return
 
             payload = {
                 "chat_id": str(c_id),
@@ -100,14 +93,13 @@ async def handler(event):
                 "message_id": str(m_id),
                 "text": combined_text,
                 "date": str(m_date),
-                "media_type": "album", # Указываем, что это альбом
-                "album_files": file_ids, # Передаем массив file_id
+                "media_type": "album",
+                "album_files": file_items, # Передаем детальный массив объектов
             }
 
             try:
-                # Всегда отправляем JSON, так как используем file_id
                 requests.post(WEBHOOK_URL, json=payload)
-                print(f"Альбом из {c_title} ({len(file_ids)} ф.) отправлен в Activepieces.")
+                print(f"Альбом из {c_title} ({len(file_items)} файлов) отправлен в Activepieces.")
             except Exception as e:
                 print(f"Ошибка отправки альбома в вебхук: {e}")
 
@@ -117,8 +109,6 @@ async def handler(event):
         return
 
     # --- Обработка ОДИНОЧНЫХ сообщений ---
-    # (Эта часть остается почти без изменений, но тоже переводим на file_id для скорости)
-    
     file_id = None
     media_type = None
 
@@ -141,7 +131,7 @@ async def handler(event):
         "text": text_content,
         "date": str(message.date),
         "media_type": media_type or "",
-        "file_id": file_id or "", # Передаем file_id для одиночного файла
+        "file_id": file_id or "",
     }
 
     try:
@@ -150,10 +140,7 @@ async def handler(event):
     except Exception as e:
         print(f"Ошибка отправки: {e}")
 
-
-# --- Вспомогательная функция для получения file_id (совместимого с ботами) ---
 def pack_bot_file_id(media):
-    """Преобразует объект медиа Telethon в file_id, понятный Telegram Bot API"""
     try:
         if isinstance(media, types.Photo):
             return media.id
