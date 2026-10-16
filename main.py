@@ -32,7 +32,6 @@ threading.Thread(target=run_web_server, daemon=True).start()
 API_ID = int(os.environ.get("API_ID", 0))
 API_HASH = os.environ.get("API_HASH", "")
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL", "")
-# Укажите в переменных окружения Render ваш публичный домен, например: https://morzen-parser.onrender.com
 RENDER_EXTERNAL_URL = os.environ.get("RENDER_EXTERNAL_URL", "").rstrip("/")
 
 TARGET_CHANNELS = [
@@ -94,18 +93,14 @@ async def handler(event):
             album_timers[group_id].cancel()
 
         async def send_album_later(g_id, c_id, c_title, m_date, m_id):
-            await asyncio.sleep(2.5)
+            # Даем 4 секунды на скачивание всех тяжелых медиафайлов доноров
+            await asyncio.sleep(4.0)
             items = album_buffers.pop(g_id, [])
             if not items:
                 return
 
-            combined_text = next((i["text"] for i in items if i["text"].strip()), "")
-            
-            if not combined_text.strip():
-                for item in items:
-                    if item["file_path"] and os.path.exists(item["file_path"]):
-                        os.remove(item["file_path"])
-                return
+            # Извлекаем единый текст поста (подпись)
+            combined_text = next((i["text"] for i in items if i["text"] and i["text"].strip()), "")
 
             media_list = []
             for item in items:
@@ -117,11 +112,15 @@ async def handler(event):
                         "url": file_url
                     })
 
+            # Если файлы не скачались вовсе, ничего не отправляем
+            if not media_list:
+                return
+
             payload = {
                 "chat_id": str(c_id),
                 "chat_title": c_title,
                 "message_id": str(m_id),
-                "text": combined_text,
+                "text": combined_text,  # Отправляет альбом, даже если текста в нем нет
                 "date": str(m_date),
                 "media_type": "album",
                 "media_list": media_list
