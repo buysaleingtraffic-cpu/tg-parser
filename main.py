@@ -37,6 +37,7 @@ RENDER_EXTERNAL_URL = os.environ.get("RENDER_EXTERNAL_URL", "").rstrip("/")
 
 TARGET_CHANNELS = [
     "ggreat_of_development",
+    "analizriska",
     "CREconsultant",
     "belaya_kaska",
     "Jelezobetonniyzames",
