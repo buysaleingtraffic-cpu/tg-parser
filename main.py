@@ -164,7 +164,7 @@ async def handler(event):
         requests.post(WEBHOOK_URL, json=payload)
         print(f"Пост из {chat_title} успешно отправлен.")
         if file_path and os.path.exists(file_path):
-            async asyncio.create_task(delayed_cleanup([file_path]))
+            asyncio.create_task(delayed_cleanup([file_path]))
     except Exception as e:
         print(f"Ошибка отправки: {e}")
 
