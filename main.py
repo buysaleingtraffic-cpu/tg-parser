@@ -54,7 +54,7 @@ album_buffers = defaultdict(list)
 album_timers = {}
 
 async def delayed_cleanup(file_paths):
-    await asyncio.sleep(300)  # Ждем минуту, пока Activepieces заберет файлы
+    await asyncio.sleep(86400)  # Ждем 24 часа, пока Activepieces заберет файлы 
     for fp in file_paths:
         if fp and os.path.exists(fp):
             try:
