@@ -43,6 +43,8 @@ TARGET_CHANNELS = [
     "dvizhenieru",
     "cool_construction",
     "domostroy_channel",
+    "NextGenInfrastructure",
+    "stroyOS",
     "propertyinsider",
     "stroi_mos_ru",
     "developers_policy",
