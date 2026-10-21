@@ -6,6 +6,7 @@ import socketserver
 import requests
 from collections import defaultdict
 from telethon import TelegramClient, events
+from telethon.sessions import StringSession
 
 os.makedirs("downloads", exist_ok=True)
 
@@ -41,6 +42,7 @@ API_ID = int(os.environ.get("API_ID", 0))
 API_HASH = os.environ.get("API_HASH", "")
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL", "")
 RENDER_EXTERNAL_URL = os.environ.get("RENDER_EXTERNAL_URL", "").rstrip("/")
+SESSION_STRING = os.environ.get("TELEGRAM_SESSION_STRING", "")
 
 TARGET_CHANNELS = [
     "ggreat_of_development",
@@ -58,8 +60,8 @@ TARGET_CHANNELS = [
     "developers_policy",
 ]
 
-print("=== ШАГ 2: Инициализация TelegramClient ===")
-client = TelegramClient("morzen_parser_session", API_ID, API_HASH)
+print("=== ШАГ 2: Инициализация TelegramClient с StringSession ===")
+client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
 
 album_buffers = defaultdict(list)
 album_timers = {}
