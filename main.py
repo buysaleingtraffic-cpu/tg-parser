@@ -25,8 +25,10 @@ class SimpleHandler(http.server.SimpleHTTPRequestHandler):
 
 def run_web_server():
     with socketserver.TCPServer(("", PORT), SimpleHandler) as httpd:
+        print(f"=== ВЕБ-СЕРВЕР ЗАПУЩЕН НА ПОРТУ {PORT} ===")
         httpd.serve_forever()
 
+# Запускаем веб-сервер в фоновом потоке, чтобы он не блокировал основной процесс
 threading.Thread(target=run_web_server, daemon=True).start()
 
 API_ID = int(os.environ.get("API_ID", 0))
@@ -50,6 +52,7 @@ TARGET_CHANNELS = [
     "developers_policy",
 ]
 
+print("=== ШАГ 1: Инициализация TelegramClient ===")
 client = TelegramClient("morzen_parser_session", API_ID, API_HASH)
 
 album_buffers = defaultdict(list)
@@ -95,13 +98,11 @@ async def handler(event):
             album_timers[group_id].cancel()
 
         async def send_album_later(g_id, c_id, c_title, m_date, m_id):
-            # Даем 4 секунды на скачивание всех тяжелых медиафайлов доноров
             await asyncio.sleep(4.0)
             items = album_buffers.pop(g_id, [])
             if not items:
                 return
 
-            # Извлекаем единый текст поста (подпись)
             combined_text = next((i["text"] for i in items if i["text"] and i["text"].strip()), "")
 
             media_list = []
@@ -114,7 +115,6 @@ async def handler(event):
                         "url": file_url
                     })
 
-            # Если файлы не скачались вовсе, ничего не отправляем
             if not media_list:
                 return
 
@@ -122,7 +122,7 @@ async def handler(event):
                 "chat_id": str(c_id),
                 "chat_title": c_title,
                 "message_id": str(m_id),
-                "text": combined_text,  # Отправляет альбом, даже если текста в нем нет
+                "text": combined_text,
                 "date": str(m_date),
                 "media_type": "album",
                 "media_list": media_list
@@ -169,6 +169,10 @@ async def handler(event):
     except Exception as e:
         print(f"Ошибка отправки: {e}")
 
-print("Парсер запущен и слушает каналы...")
-client.start()
-client.run_until_disconnected()
+print("=== ШАГ 2: Попытка запустить client.start() ===")
+try:
+    client.start()
+    print("=== УСПЕХ: Парсер запущен и слушает каналы! ===")
+    client.run_until_disconnected()
+except Exception as e:
+    print(f"=== КРИТИЧЕСКАЯ ОШИБКА TELETHON: {e} ===")
