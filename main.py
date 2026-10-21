@@ -11,12 +11,12 @@ os.makedirs("downloads", exist_ok=True)
 
 PORT = int(os.environ.get("PORT", 10000))
 
-# Веб-сервер на Render, который также раздает файлы из папки downloads
+# Веб-сервер на Render, который раздает файлы из папки downloads
 class SimpleHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=".", **kwargs)
     def do_GET(self):
-        if self.path == "/" or self.path == "":
+        if self.path == "" or self.path == "/":
             self.send_response(200)
             self.end_headers()
             self.wfile.write(b"Bot is active and running!")
@@ -24,12 +24,18 @@ class SimpleHandler(http.server.SimpleHTTPRequestHandler):
             super().do_GET()
 
 def run_web_server():
-    with socketserver.TCPServer(("", PORT), SimpleHandler) as httpd:
-        print(f"=== ВЕБ-СЕРВЕР ЗАПУЩЕН НА ПОРТУ {PORT} ===")
-        httpd.serve_forever()
+    try:
+        handler = SimpleHandler
+        # Используем "0.0.0.0" для корректной привязки порта в Docker-контейнере
+        with socketserver.TCPServer(("0.0.0.0", PORT), handler) as httpd:
+            print(f"=== ВЕБ-СЕРВЕР УСПЕШНО СТАРТОВАЛ НА ПОРТУ {PORT} ===")
+            httpd.serve_forever()
+    except Exception as e:
+        print(f"=== ОШИБКА ВЕБ-СЕРВЕРА: {e} ===")
 
-# Запускаем веб-сервер в фоновом потоке, чтобы он не блокировал основной процесс
-threading.Thread(target=run_web_server, daemon=True).start()
+print("=== ШАГ 1: Запуск фонового потока веб-сервера ===")
+server_thread = threading.Thread(target=run_web_server, daemon=True)
+server_thread.start()
 
 API_ID = int(os.environ.get("API_ID", 0))
 API_HASH = os.environ.get("API_HASH", "")
@@ -52,19 +58,19 @@ TARGET_CHANNELS = [
     "developers_policy",
 ]
 
-print("=== ШАГ 1: Инициализация TelegramClient ===")
+print("=== ШАГ 2: Инициализация TelegramClient ===")
 client = TelegramClient("morzen_parser_session", API_ID, API_HASH)
 
 album_buffers = defaultdict(list)
 album_timers = {}
 
 async def delayed_cleanup(file_paths):
-    await asyncio.sleep(86400)  # Ждем 24 часа, пока Activepieces заберет файлы 
+    await asyncio.sleep(86400)  # Ждем 24 часа, пока Activepieces заберет файлы
     for fp in file_paths:
         if fp and os.path.exists(fp):
             try:
                 os.remove(fp)
-            except:
+            except Exception:
                 pass
 
 @client.on(events.NewMessage(chats=TARGET_CHANNELS))
@@ -169,7 +175,7 @@ async def handler(event):
     except Exception as e:
         print(f"Ошибка отправки: {e}")
 
-print("=== ШАГ 2: Попытка запустить client.start() ===")
+print("=== ШАГ 3: Попытка запустить client.start() ===")
 try:
     client.start()
     print("=== УСПЕХ: Парсер запущен и слушает каналы! ===")
