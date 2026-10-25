@@ -45,10 +45,8 @@ RENDER_EXTERNAL_URL = os.environ.get("RENDER_EXTERNAL_URL", "").rstrip("/")
 SESSION_STRING = os.environ.get("TELEGRAM_SESSION_STRING", "")
 
 TARGET_CHANNELS = [
-    "ggreat_of_development",
     "analizriska",
     "CREconsultant",
-    "belaya_kaska",
     "Jelezobetonniyzames",
     "dvizhenieru",
     "cool_construction",
