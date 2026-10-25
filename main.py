@@ -46,6 +46,7 @@ SESSION_STRING = os.environ.get("TELEGRAM_SESSION_STRING", "")
 
 TARGET_CHANNELS = [
     "analizriska",
+    "ria_realty",
     "CREconsultant",
     "Jelezobetonniyzames",
     "dvizhenieru",
