@@ -55,7 +55,6 @@ TARGET_CHANNELS = [
     "NextGenInfrastructure",
     "stroyOS",
     "propertyinsider",
-    "stroi_mos_ru",
     "developers_policy",
 ]
 
