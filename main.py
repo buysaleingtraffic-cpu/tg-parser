@@ -55,6 +55,7 @@ TARGET_CHANNELS = [
     "NextGenInfrastructure",
     "stroyOS",
     "propertyinsider",
+    "realestatehunter21",
     "developers_policy",
 ]
 
