@@ -91,7 +91,7 @@ async def handler(event):
         media_type = "document"
         file_path = await message.download_media(file="downloads/")
 
-    # Обработка альбомов (здесь для совместимости с JS-кодом альбома используем ключ "media")
+    # Обработка альбомов
     if message.grouped_id:
         group_id = str(message.grouped_id)
 
@@ -119,7 +119,8 @@ async def handler(event):
                     file_url = f"{RENDER_EXTERNAL_URL}/downloads/{filename}" if RENDER_EXTERNAL_URL else f"/downloads/{filename}"
                     media_list.append({
                         "type": item["media_type"] if item["media_type"] in ["photo", "video"] else "photo",
-                        "media": file_url  # Специально для альбома MAX
+                        "url": file_url,
+                        "media": file_url  # Дублируем оба ключа для полной совместимости
                     })
 
             if not media_list:
@@ -148,14 +149,15 @@ async def handler(event):
         )
         return
 
-    # Одиночные сообщения (здесь возвращаем исходный ключ "url", чтобы не ломать другие ветки)
+    # Одиночные сообщения (также дублируем оба ключа)
     media_list = []
     if file_path and os.path.exists(file_path):
         filename = os.path.basename(file_path)
         file_url = f"{RENDER_EXTERNAL_URL}/downloads/{filename}" if RENDER_EXTERNAL_URL else f"/downloads/{filename}"
         media_list.append({
             "type": media_type if media_type in ["photo", "video", "document"] else "photo",
-            "url": file_url  # Возвращаем "url" для остальных веток
+            "url": file_url,
+            "media": file_url  # Дублируем оба ключа
         })
 
     payload = {
