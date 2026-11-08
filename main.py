@@ -27,7 +27,6 @@ class SimpleHandler(http.server.SimpleHTTPRequestHandler):
 def run_web_server():
     try:
         handler = SimpleHandler
-        # Используем "0.0.0.0" для корректной привязки порта в Docker-контейнере
         with socketserver.TCPServer(("0.0.0.0", PORT), handler) as httpd:
             print(f"=== ВЕБ-СЕРВЕР УСПЕШНО СТАРТОВАЛ НА ПОРТУ {PORT} ===")
             httpd.serve_forever()
@@ -92,7 +91,7 @@ async def handler(event):
         media_type = "document"
         file_path = await message.download_media(file="downloads/")
 
-    # Обработка альбомов
+    # Обработка альбомов (здесь для совместимости с JS-кодом альбома используем ключ "media")
     if message.grouped_id:
         group_id = str(message.grouped_id)
 
@@ -120,7 +119,7 @@ async def handler(event):
                     file_url = f"{RENDER_EXTERNAL_URL}/downloads/{filename}" if RENDER_EXTERNAL_URL else f"/downloads/{filename}"
                     media_list.append({
                         "type": item["media_type"] if item["media_type"] in ["photo", "video"] else "photo",
-                        "media": file_url  # <-- Заменили url на media
+                        "media": file_url  # Специально для альбома MAX
                     })
 
             if not media_list:
@@ -149,14 +148,14 @@ async def handler(event):
         )
         return
 
-    # Одиночные сообщения
+    # Одиночные сообщения (здесь возвращаем исходный ключ "url", чтобы не ломать другие ветки)
     media_list = []
     if file_path and os.path.exists(file_path):
         filename = os.path.basename(file_path)
         file_url = f"{RENDER_EXTERNAL_URL}/downloads/{filename}" if RENDER_EXTERNAL_URL else f"/downloads/{filename}"
         media_list.append({
             "type": media_type if media_type in ["photo", "video", "document"] else "photo",
-            "media": file_url  # <-- Заменили url на media
+            "url": file_url  # Возвращаем "url" для остальных веток
         })
 
     payload = {
