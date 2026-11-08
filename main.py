@@ -120,7 +120,7 @@ async def handler(event):
                     file_url = f"{RENDER_EXTERNAL_URL}/downloads/{filename}" if RENDER_EXTERNAL_URL else f"/downloads/{filename}"
                     media_list.append({
                         "type": item["media_type"] if item["media_type"] in ["photo", "video"] else "photo",
-                        "url": file_url
+                        "media": file_url  # <-- Заменили url на media
                     })
 
             if not media_list:
@@ -156,7 +156,7 @@ async def handler(event):
         file_url = f"{RENDER_EXTERNAL_URL}/downloads/{filename}" if RENDER_EXTERNAL_URL else f"/downloads/{filename}"
         media_list.append({
             "type": media_type if media_type in ["photo", "video", "document"] else "photo",
-            "url": file_url
+            "media": file_url  # <-- Заменили url на media
         })
 
     payload = {
