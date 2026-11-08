@@ -27,6 +27,7 @@ class SimpleHandler(http.server.SimpleHTTPRequestHandler):
 def run_web_server():
     try:
         handler = SimpleHandler
+        # Используем "0.0.0.0" для корректной привязки порта в Docker-контейнере
         with socketserver.TCPServer(("0.0.0.0", PORT), handler) as httpd:
             print(f"=== ВЕБ-СЕРВЕР УСПЕШНО СТАРТОВАЛ НА ПОРТУ {PORT} ===")
             httpd.serve_forever()
@@ -119,8 +120,7 @@ async def handler(event):
                     file_url = f"{RENDER_EXTERNAL_URL}/downloads/{filename}" if RENDER_EXTERNAL_URL else f"/downloads/{filename}"
                     media_list.append({
                         "type": item["media_type"] if item["media_type"] in ["photo", "video"] else "photo",
-                        "url": file_url,
-                        "media": file_url  # Дублируем оба ключа для полной совместимости
+                        "url": file_url
                     })
 
             if not media_list:
@@ -149,15 +149,14 @@ async def handler(event):
         )
         return
 
-    # Одиночные сообщения (также дублируем оба ключа)
+    # Одиночные сообщения
     media_list = []
     if file_path and os.path.exists(file_path):
         filename = os.path.basename(file_path)
         file_url = f"{RENDER_EXTERNAL_URL}/downloads/{filename}" if RENDER_EXTERNAL_URL else f"/downloads/{filename}"
         media_list.append({
             "type": media_type if media_type in ["photo", "video", "document"] else "photo",
-            "url": file_url,
-            "media": file_url  # Дублируем оба ключа
+            "url": file_url
         })
 
     payload = {
